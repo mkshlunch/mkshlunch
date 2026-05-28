@@ -1,0 +1,235 @@
+import streamlit as st
+import pandas as pd
+import os
+import requests
+from datetime import datetime
+
+# 1. 網頁基本設定
+st.set_page_config(page_title="馬高午餐評分系統", page_icon="🍱", layout="centered")
+st.title("🍱 馬高午餐評分與數據統計系統 (雲端完全體)")
+
+# 2. 檔案路徑與雲端連結讀取
+menu_file = "lunch_menu.csv"
+
+try:
+    cloud_post_url = st.secrets["connections"]["gsheets"]["spreadsheet"]
+    cloud_read_url = st.secrets["connections"]["gsheets"]["csv_url"]
+except:
+    cloud_post_url = ""
+    cloud_read_url = ""
+
+# 3. 防作弊核心：初始化瀏覽器記憶體
+if "voted_dishes" not in st.session_state:
+    st.session_state.voted_dishes = set()
+
+# 4. 檢查主菜單是否存在
+if os.path.exists(menu_file):
+    df_menu = pd.read_csv(menu_file, encoding="utf-8-sig", dtype={"date": str})
+    
+    # 建立網頁分頁
+    tab1, tab2 = st.tabs(["📱 學生專屬評分區", "📊 排餐參考大看板"])
+    
+    # ================= 頁籤一：學生專屬評分區 =================
+    with tab1:
+        today_str = datetime.now().strftime("%Y-%m-%d")
+        available_dates = df_menu['date'].unique()
+        
+        if today_str in available_dates:
+            active_date = today_str
+            st.info(f"✨ 系統已自動切換至今日菜單 ({active_date})")
+        else:
+            active_date = available_dates[-1]
+            st.warning(f"🔍 找不到今日菜單，自動顯示最新一日的菜單 ({active_date})")
+            
+        st.write("請對今日菜色進行評分（每道菜限投一次）：")
+        
+        df_today_menu = df_menu[df_menu['date'] == active_date]
+        categories = df_today_menu['category'].unique()
+        
+        for cat in categories:
+            st.markdown(f"### 🔹 {cat}")
+            dishes = df_today_menu[df_today_menu['category'] == cat]['dish_name'].tolist()
+            
+            for dish in dishes:
+                col1, col2, col3 = st.columns([3, 2, 2])
+                vote_key = f"{active_date}_{dish}"
+                has_voted = vote_key in st.session_state.voted_dishes
+                
+                with col1:
+                    if has_voted:
+                        st.write(f"~~{dish} (已完成評分)~~")
+                    else:
+                        st.write(f"**{dish}**")
+                        
+                with col2:
+                    score = st.selectbox(
+                        "分數", [5, 4, 3, 2, 1], 
+                        format_func=lambda x: f"{x} ⭐", 
+                        key=f"score_{dish}", 
+                        label_visibility="collapsed",
+                        disabled=has_voted
+                    )
+                    
+                with col3:
+                    if has_voted:
+                        st.button("已送出", key=f"btn_{dish}", disabled=True)
+                    else:
+                        if st.button("送出", key=f"btn_{dish}"):
+                            if not cloud_post_url or "macros/s" not in cloud_post_url:
+                                st.error("❌ 錯誤：請確認 secrets.toml 內填入的是 Google Apps Script 的網頁應用程式網址！")
+                            else:
+                                now_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                
+                                payload = {
+                                    "timestamp": now_time,
+                                    "menu_date": active_date,
+                                    "category": cat,
+                                    "dish_name": dish,
+                                    "rating": int(score)
+                                }
+                                
+                                try:
+                                    res = requests.post(cloud_post_url, data=payload)
+                                    if "Success" in res.text or res.status_code == 200:
+                                        st.session_state.voted_dishes.add(vote_key)
+                                        st.toast(f"🎉 {dish} 評分雲端同步成功！")
+                                        st.balloons()
+                                        st.rerun()
+                                    else:
+                                        st.error("❌ 雲端拒絕接收，請檢查 Apps Script 的『誰有存取權』是否設定為『任何人』。")
+                                except Exception as e:
+                                    st.error(f"❌ 連線失敗: {e}")
+            st.write("---")
+            
+    # ================= 頁籤二：排餐參考大看板 =================
+    with tab2:
+        st.subheader("📈 全校歷史評分統計排行榜")
+        
+        if not cloud_read_url:
+            st.info("💡 請至 secrets.toml 設定 csv_url，即可啟用雲端看板功能！")
+        else:
+            # 直接從發布的雲端 CSV 讀取數據，效率極高
+            try:
+                # 加上 [1] 是為了強迫 Streamlit 每次切換分頁都去撈最新資料，不使用舊快取
+                df_ratings = pd.read_csv(f"{cloud_read_url}&timestamp={datetime.now().timestamp()}", encoding="utf-8")
+            except Exception as e:
+                df_ratings = pd.DataFrame()
+                st.error(f"❌ 讀取雲端資料失敗。請確認試算表有『發布到網路』並選擇 CSV 格式。")
+                
+            if df_ratings.empty or len(df_ratings) == 0:
+                st.info("☁️ 目前雲端資料庫還是空的（或者剛發布還在同步），正在等待第一筆學生投票數據！")
+            else:
+                # 強制校正雲端撈下來的欄位名稱
+                df_ratings.columns = ["timestamp", "menu_date", "category", "dish_name", "rating"]
+                df_ratings["menu_date"] = df_ratings["menu_date"].astype(str)
+                df_ratings["rating"] = pd.to_numeric(df_ratings["rating"])
+                
+                # 日期篩選器
+                date_options = ["所有歷史累積"] + list(df_menu['date'].unique())
+                selected_date = st.selectbox("📅 選擇查看特定日期的排行榜：", date_options)
+                
+                if selected_date != "所有歷史累積":
+                    df_date_filtered = df_ratings[df_ratings["menu_date"] == selected_date]
+                else:
+                    df_date_filtered = df_ratings
+                    
+                # 分類篩選器
+                filter_options = ["全部菜色"] + list(df_menu['category'].unique())
+                selected_filter = st.selectbox("🔍 依菜色分類篩選：", filter_options)
+                
+                if df_date_filtered.empty:
+                    st.warning(f"目前還沒有人評分過 {selected_date} 的菜色喔！")
+                else:
+                    # 計算平均分數與統計
+                    df_stats = df_date_filtered.groupby("dish_name").agg(
+                        平均分數=("rating", "mean"),
+                        總投票次數=("rating", "count"),
+                        分類=("category", "first")
+                    ).reset_index()
+                    
+                    df_stats["平均分數"] = df_stats["平均分數"].round(2)
+                    df_stats = df_stats.sort_values(by="平均分數", ascending=False)
+                    df_stats = df_stats[["分類", "dish_name", "平均分數", "總投票次數"]]
+                    
+                    if selected_filter != "全部菜色":
+                        df_final = df_stats[df_stats["分類"] == selected_filter]
+                    else:
+                        df_final = df_stats
+                    
+                    st.write(f"### 🏆 {selected_date} - {selected_filter} 視覺化動態星榜")
+                    
+                    st.markdown("""
+                    <style>
+                    .star-container {
+                        display: flex; align-items: center; justify-content: space-between; 
+                        background-color: #f8f9fa; padding: 10px 15px; border-radius: 8px; margin-bottom: 8px;
+                        border-left: 5px solid #ffc107; box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+                    }
+                    </style>
+                    """, unsafe_allow_html=True)
+                    
+                    if not df_final.empty:
+                        for idx, row in df_final.iterrows():
+                            dish_name = row["dish_name"]
+                            score_val = row["平均分數"]
+                            votes_val = row["總投票次數"]
+                            percentage = (score_val / 5.0) * 100
+                            
+                            star_html = f"""
+                            <div class="star-container">
+                                <div style="font-weight: bold; font-size: 16px; color: #333;">{dish_name}</div>
+                                <div style="display: flex; align-items: center; gap: 12px;">
+                                    <div style="position: relative; width: 120px; font-size: 26px; user-select: none; line-height: 1;">
+                                        <div style="display: flex; justify-content: space-between; color: #e0e0e0;">
+                                            <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                                        </div>
+                                        <div style="position: absolute; top: 0; left: 0; width: {percentage}%; overflow: hidden; color: #ffc107; white-space: nowrap; line-height: 1;">
+                                            <div style="display: flex; justify-content: space-between; width: 120px;">
+                                                <span>★</span><span>★</span><span>★</span><span>★</span><span>★</span>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <span style="font-weight: bold; color: #ff9800; font-size: 16px; width: 45px; text-align: right;">{score_val:.2f}</span>
+                                    <span style="color: #6c757d; font-size: 12px;">({votes_val}票)</span>
+                                </div>
+                            </div>
+                            """
+                            st.markdown(star_html, unsafe_allow_html=True)
+                    
+                    st.write("---")
+                    st.write("### 📋 詳細數據明細表")
+                    st.dataframe(df_final, use_container_width=True, hide_index=True)
+                    
+                    csv_data = df_final.to_csv(index=False).encode('utf-8-sig')
+                    st.download_button(
+                        label="📥 點我下載此統計報表 (CSV 格式)",
+                        data=csv_data,
+                        file_name=f"馬高午餐統計_{selected_date}_{selected_filter}.csv",
+                        mime="text/csv"
+                    )
+                    
+                    if not df_final.empty:
+                        top_dish = df_final.iloc[0]["dish_name"]
+                        top_score = df_final.iloc[0]["平均分數"]
+                        worst_dish = df_final.iloc[-1]["dish_name"]
+                        worst_score = df_final.iloc[-1]["平均分數"]
+                        
+                        st.write("---")
+                        st.markdown(f"👑 **人氣王**：`{top_dish}` ({top_score} ⭐)")
+                        st.markdown(f"⚠️ **踩雷王**：`{worst_dish}` ({worst_score} ⭐)")
+                    
+                    # ================== 大數據趨勢折線圖 ==================
+                    st.write("---")
+                    st.write("### 📈 菜色滿意度歷史趨勢追蹤")
+                    all_dishes_in_history = sorted(df_ratings["dish_name"].unique())
+                    
+                    if all_dishes_in_history:
+                        selected_trend_dish = st.selectbox("🔍 選擇想追蹤歷史趨勢的菜色：", all_dishes_in_history)
+                        df_dish_trend = df_ratings[df_ratings["dish_name"] == selected_trend_dish]
+                        df_trend_chart = df_dish_trend.groupby("menu_date")["rating"].mean().reset_index()
+                        df_trend_chart = df_trend_chart.sort_values(by="menu_date")
+                        df_trend_chart.columns = ["日期", "當日平均分數"]
+                        df_trend_chart = df_trend_chart.set_index("日期")
+                        st.line_chart(df_trend_chart, y="當日平均分數")
+else:
+    st.error(f"❌ 找不到 `lunch_menu.csv`，請確保菜單檔案在同一個資料夾內。")
