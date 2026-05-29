@@ -5,8 +5,8 @@ import requests
 from datetime import datetime, timedelta, timezone
 
 # 1. 網頁基本設定
-st.set_page_config(page_title="馬高午餐評分系統", page_icon="🍱", layout="centered")
-st.title("🍱 馬高午餐評分與數據統計系統 (雲端完全體)")
+st.set_page_config(page_title="馬高午餐小拉屎", page_icon="🍱", layout="centered")
+st.title("🍱 馬高午餐小拉屎")
 
 # 強制設定為台灣台北時區 (UTC+8)
 tz_taiwan = timezone(timedelta(hours=8))
@@ -30,7 +30,7 @@ if os.path.exists(menu_file):
     df_menu = pd.read_csv(menu_file, encoding="utf-8-sig", dtype={"date": str})
     
     # 建立網頁分頁
-    tab1, tab2 = st.tabs(["📱 學生專屬評分區", "📊 排餐參考大看板"])
+    tab1, tab2 = st.tabs(["📱 學生評分區", "📊 歷史趨勢總覽"])
     
     # ================= 頁籤一：學生專屬評分區 =================
     with tab1:
@@ -61,7 +61,7 @@ if os.path.exists(menu_file):
                 
                 with col1:
                     if has_voted:
-                        st.write(f"~~{dish} (已完成評分)~~")
+                        st.write(f"~~{dish} (已評分)~~")
                     else:
                         st.write(f"**{dish}**")
                         
@@ -97,21 +97,21 @@ if os.path.exists(menu_file):
                                     res = requests.post(cloud_post_url, data=payload)
                                     if "Success" in res.text or res.status_code == 200:
                                         st.session_state.voted_dishes.add(vote_key)
-                                        st.toast(f"🎉 {dish} 評分雲端同步成功！")
+                                        st.toast(f"🎉 {dish} 評分雲端同步成功")
                                         st.balloons()
                                         st.rerun()
                                     else:
-                                        st.error("❌ 雲端拒絕接收，請檢查 Apps Script 的『誰有存取權』是否設定為『任何人』。")
+                                        st.error("❌ 雲端拒絕接收，請檢查 Apps Script 的存取權是否設定為任何人。")
                                 except Exception as e:
                                     st.error(f"❌ 連線失敗: {e}")
             st.write("---")
             
     # ================= 頁籤二：排餐參考大看板 =================
     with tab2:
-        st.subheader("📈 全校歷史評分統計排行榜")
+        st.subheader("📈歷史評分統計榜")
         
         if not cloud_read_url:
-            st.info("💡 請至 secrets.toml 設定 csv_url，即可啟用雲端看板功能！")
+            st.info("💡 請聯繫管理員(至secrets.toml 設定 csv_url，即可啟用雲端看板功能)")
         else:
             try:
                 # 透過加上 timestamp 參數，強迫 Streamlit 每次都去撈最新的 Google 試算表資料
