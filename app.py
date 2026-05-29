@@ -2,11 +2,14 @@ import streamlit as st
 import pandas as pd
 import os
 import requests
-from datetime import datetime
+from datetime import datetime, timedelta, timezone
 
 # 1. 網頁基本設定
 st.set_page_config(page_title="馬高午餐評分系統", page_icon="🍱", layout="centered")
 st.title("🍱 馬高午餐評分與數據統計系統 (雲端完全體)")
+
+# 強制設定為台灣台北時區 (UTC+8)
+tz_taiwan = timezone(timedelta(hours=8))
 
 # 2. 檔案路徑與雲端連結讀取
 menu_file = "lunch_menu.csv"
@@ -31,7 +34,8 @@ if os.path.exists(menu_file):
     
     # ================= 頁籤一：學生專屬評分區 =================
     with tab1:
-        today_str = datetime.now().strftime("%Y-%m-%d")
+        # 💡 關鍵修正：精準抓取台灣當下的日期，徹底解決國外伺服器時差問題
+        today_str = datetime.now(tz_taiwan).strftime("%Y-%m-%d")
         available_dates = df_menu['date'].unique()
         
         if today_str in available_dates:
@@ -78,7 +82,8 @@ if os.path.exists(menu_file):
                             if not cloud_post_url or "macros/s" not in cloud_post_url:
                                 st.error("❌ 錯誤：請確認 secrets.toml 內填入的是 Google Apps Script 的網頁應用程式網址！")
                             else:
-                                now_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                # 寫入雲端的時間也同步改為台灣時間
+                                now_time = datetime.now(tz_taiwan).strftime("%Y-%m-%d %H:%M:%S")
                                 
                                 payload = {
                                     "timestamp": now_time,
@@ -108,10 +113,10 @@ if os.path.exists(menu_file):
         if not cloud_read_url:
             st.info("💡 請至 secrets.toml 設定 csv_url，即可啟用雲端看板功能！")
         else:
-            # 直接從發布的雲端 CSV 讀取數據，效率極高
             try:
-                # 加上 [1] 是為了強迫 Streamlit 每次切換分頁都去撈最新資料，不使用舊快取
-                df_ratings = pd.read_csv(f"{cloud_read_url}&timestamp={datetime.now().timestamp()}", encoding="utf-8")
+                # 透過加上 timestamp 參數，強迫 Streamlit 每次都去撈最新的 Google 試算表資料
+                current_ts = datetime.now(tz_taiwan).timestamp()
+                df_ratings = pd.read_csv(f"{cloud_read_url}&timestamp={current_ts}", encoding="utf-8")
             except Exception as e:
                 df_ratings = pd.DataFrame()
                 st.error(f"❌ 讀取雲端資料失敗。請確認試算表有『發布到網路』並選擇 CSV 格式。")
@@ -119,12 +124,10 @@ if os.path.exists(menu_file):
             if df_ratings.empty or len(df_ratings) == 0:
                 st.info("☁️ 目前雲端資料庫還是空的（或者剛發布還在同步），正在等待第一筆學生投票數據！")
             else:
-                # 強制校正雲端撈下來的欄位名稱
                 df_ratings.columns = ["timestamp", "menu_date", "category", "dish_name", "rating"]
                 df_ratings["menu_date"] = df_ratings["menu_date"].astype(str)
                 df_ratings["rating"] = pd.to_numeric(df_ratings["rating"])
                 
-                # 日期篩選器
                 date_options = ["所有歷史累積"] + list(df_menu['date'].unique())
                 selected_date = st.selectbox("📅 選擇查看特定日期的排行榜：", date_options)
                 
@@ -133,14 +136,12 @@ if os.path.exists(menu_file):
                 else:
                     df_date_filtered = df_ratings
                     
-                # 分類篩選器
                 filter_options = ["全部菜色"] + list(df_menu['category'].unique())
                 selected_filter = st.selectbox("🔍 依菜色分類篩選：", filter_options)
                 
                 if df_date_filtered.empty:
                     st.warning(f"目前還沒有人評分過 {selected_date} 的菜色喔！")
                 else:
-                    # 計算平均分數與統計
                     df_stats = df_date_filtered.groupby("dish_name").agg(
                         平均分數=("rating", "mean"),
                         總投票次數=("rating", "count"),
@@ -205,7 +206,8 @@ if os.path.exists(menu_file):
                         label="📥 點我下載此統計報表 (CSV 格式)",
                         data=csv_data,
                         file_name=f"馬高午餐統計_{selected_date}_{selected_filter}.csv",
-                        mime="text/csv"
+                        mime="text/csv",
+                        key="download_report"
                     )
                     
                     if not df_final.empty:
@@ -218,7 +220,6 @@ if os.path.exists(menu_file):
                         st.markdown(f"👑 **人氣王**：`{top_dish}` ({top_score} ⭐)")
                         st.markdown(f"⚠️ **踩雷王**：`{worst_dish}` ({worst_score} ⭐)")
                     
-                    # ================== 大數據趨勢折線圖 ==================
                     st.write("---")
                     st.write("### 📈 菜色滿意度歷史趨勢追蹤")
                     all_dishes_in_history = sorted(df_ratings["dish_name"].unique())
