@@ -5,8 +5,8 @@ import requests
 from datetime import datetime, timedelta, timezone
 
 # 1. 網頁基本設定
-st.set_page_config(page_title="馬高午餐評分系統", page_icon="🍱", layout="centered")
-st.title("🍱 馬高午餐評分與數據統計系統 (雲端完全體)")
+st.set_page_config(page_title="馬高午餐小拉屎", page_icon="🍱", layout="centered")
+st.title("🍱 馬高午餐小拉屎")
 
 # 強制設定為台灣台北時區 (UTC+8)
 tz_taiwan = timezone(timedelta(hours=8))
@@ -30,7 +30,7 @@ if os.path.exists(menu_file):
     df_menu = pd.read_csv(menu_file, encoding="utf-8-sig", dtype={"date": str})
     
     # 建立網頁分頁
-    tab1, tab2 = st.tabs(["📱 學生專屬評分區", "📊 排餐參考大看板"])
+    tab1, tab2 = st.tabs(["📱 學生專屬評分區", "📊 歷史總覽"])
     
     # ================= 頁籤一：學生專屬評分區 =================
     with tab1:
