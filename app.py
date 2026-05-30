@@ -211,14 +211,14 @@ if os.path.exists(menu_file):
                     )
                     
                     if not df_final.empty:
-                        worst_dish = df_final.iloc[-5]["dish_name"]
-                        worst_score = df_final.iloc[-5]["平均分數"]
+                        worst_dish = df_final.iloc[-1]["dish_name"]
+                        worst_score = df_final.iloc[-1]["平均分數"]
                         
                         st.write("---")
                         st.markdown(f"⚠️ 需盡快改善：`{worst_dish}` ({worst_score} ⭐)")
                     
                     st.write("---")
-                    st.write("### 📈 菜色滿意度歷史趨勢追蹤")
+                    st.write("### 📈 菜色滿意度歷史趨勢")
                     all_dishes_in_history = sorted(df_ratings["dish_name"].unique())
                     
                     if all_dishes_in_history:
@@ -230,4 +230,4 @@ if os.path.exists(menu_file):
                         df_trend_chart = df_trend_chart.set_index("日期")
                         st.line_chart(df_trend_chart, y="當日平均分數")
 else:
-    st.error(f"❌ 找不到 `lunch_menu.csv`，請確保菜單檔案在同一個資料夾內。")
+    st.error(f"❌ 請聯繫管理員(找不到lunch_menu.csv 請確保菜單檔案在同一個資料夾內)")
