@@ -150,7 +150,7 @@ if os.path.exists(menu_file):
                     
                     df_stats["平均分數"] = df_stats["平均分數"].round(2)
                     df_stats = df_stats.sort_values(by="平均分數", ascending=False)
-                    df_stats = df_stats[["分類", "菜名", "平均分數", "總投票次數"]]
+                    df_stats = df_stats[["分類", "dish_name", "平均分數", "總投票次數"]]
                     
                     if selected_filter != "全部菜色":
                         df_final = df_stats[df_stats["分類"] == selected_filter]
