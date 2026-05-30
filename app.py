@@ -80,7 +80,7 @@ if os.path.exists(menu_file):
                     else:
                         if st.button("送出", key=f"btn_{dish}"):
                             if not cloud_post_url or "macros/s" not in cloud_post_url:
-                                st.error("❌ 錯誤：請確認 secrets.toml 內填入的是 Google Apps Script 的網頁應用程式網址！")
+                                st.error("❌ 請聯繫管理員(錯誤：請確認secrets.toml內填入的是Google Apps Script的網頁應用程式網址)")
                             else:
                                 # 寫入雲端的時間也同步改為台灣時間
                                 now_time = datetime.now(tz_taiwan).strftime("%Y-%m-%d %H:%M:%S")
@@ -101,17 +101,17 @@ if os.path.exists(menu_file):
                                         st.balloons()
                                         st.rerun()
                                     else:
-                                        st.error("❌ 雲端拒絕接收，請檢查 Apps Script 的『誰有存取權』是否設定為『任何人』。")
+                                        st.error("❌ 請聯繫管理員(雲端拒絕接收 請檢查Apps Script的『誰有存取權』是否設定為『任何人』)")
                                 except Exception as e:
                                     st.error(f"❌ 連線失敗: {e}")
             st.write("---")
             
     # ================= 頁籤二：排餐參考大看板 =================
     with tab2:
-        st.subheader("📈 全校歷史評分統計排行榜")
+        st.subheader("📈 歷史評分榜")
         
         if not cloud_read_url:
-            st.info("💡 請至 secrets.toml 設定 csv_url，即可啟用雲端看板功能！")
+            st.info("❌ 請聯繫管理員(請至secrets.toml設定csv_url即可啟用雲端看板功能)")
         else:
             try:
                 # 透過加上 timestamp 參數，強迫 Streamlit 每次都去撈最新的 Google 試算表資料
