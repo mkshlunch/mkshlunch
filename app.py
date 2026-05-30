@@ -171,7 +171,7 @@ if os.path.exists(menu_file):
                     
                     if not df_final.empty:
                         for idx, row in df_final.iterrows():
-                            dish_name = row["菜名"]
+                            dish_name = row["dish_name"]
                             score_val = row["平均分數"]
                             votes_val = row["總投票次數"]
                             percentage = (score_val / 5.0) * 100
