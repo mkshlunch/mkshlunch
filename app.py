@@ -234,4 +234,4 @@ if all_dishes_in_history:
  df_trend_chart = df_trend_chart.set_index("日期")
  st.line_chart(df_trend_chart, y="當日平均分數")
 else:
- st.error(f"❌ 請聯繫管理員(找不到lunch_menu.csv 請確保菜單檔案在同一個資料夾內)")
+ st.error(f"❌ 請聯繫管理員(未知錯誤)")
