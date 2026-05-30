@@ -119,10 +119,10 @@ if os.path.exists(menu_file):
                 df_ratings = pd.read_csv(f"{cloud_read_url}&timestamp={current_ts}", encoding="utf-8")
             except Exception as e:
                 df_ratings = pd.DataFrame()
-                st.error(f"❌ 讀取雲端資料失敗。請確認試算表有『發布到網路』並選擇 CSV 格式。")
+                st.error(f"❌ 請聯繫管理員(讀取雲端資料失敗 請確認試算表有『發布到網路』並選擇CSV格式)")
                 
             if df_ratings.empty or len(df_ratings) == 0:
-                st.info("☁️ 目前雲端資料庫還是空的（或者剛發布還在同步），正在等待第一筆學生投票數據！")
+                st.info("☁️ 目前雲端資料庫還是空的 正在等待第一筆學生投票數據")
             else:
                 df_ratings.columns = ["timestamp", "menu_date", "category", "dish_name", "rating"]
                 df_ratings["menu_date"] = df_ratings["menu_date"].astype(str)
