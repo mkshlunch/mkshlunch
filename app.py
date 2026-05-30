@@ -203,7 +203,7 @@ if os.path.exists(menu_file):
                     
                     csv_data = df_final.to_csv(index=False).encode('utf-8-sig')
                     st.download_button(
-                        label="📥 點我下載此統計報表 (CSV 格式)",
+                        label="📥 點此下載統計報表 (CSV格式)",
                         data=csv_data,
                         file_name=f"馬高午餐統計_{selected_date}_{selected_filter}.csv",
                         mime="text/csv",
