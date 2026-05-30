@@ -210,16 +210,16 @@ if os.path.exists(menu_file):
                         key="download_report"
                     )
                     
-                  if not df_final.empty:
-                    st.write("---")
-                    st.markdown("### ⚠️ 需盡快改善：")
-                    
-                    # 抓取最後 5 筆，並反轉順序（讓分數最低的排在最上面）
-                    df_worst_five = df_final.iloc[-5:].iloc[::-1]
-                    
-                    # 用迴圈把每一道菜列出來
-                    for idx, row in df_worst_five.iterrows():
-                        st.markdown(f"❌ `{row['dish_name']}` ({row['平均分數']} ⭐)")
+if not df_final.empty:
+    st.write("---")
+    st.markdown("### ⚠️ 需盡快改善：")
+    
+    # 抓取最後 5 筆，並反轉順序（讓分數最低的排在最上面）
+    df_worst_five = df_final.iloc[-5:].iloc[::-1]
+    
+    # 用迴圈把每一道菜列出來
+    for idx, row in df_worst_five.iterrows():
+        st.markdown(f"❌ `{row['dish_name']}` ({row['平均分數']} ⭐)")
         
                     st.write("---")
                     st.write("### 📈 菜色滿意度歷史趨勢")
