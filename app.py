@@ -30,7 +30,7 @@ if os.path.exists(menu_file):
     df_menu = pd.read_csv(menu_file, encoding="utf-8-sig", dtype={"date": str})
     
     # 建立網頁分頁
-    tab1, tab2 = st.tabs(["📱 學生專屬評分區", "📊 歷史總覽"])
+    tab1, tab2 = st.tabs(["📱 學生專屬評分區", "📊 歷史評分總覽"])
     
     # ================= 頁籤一：學生專屬評分區 =================
     with tab1:
@@ -43,9 +43,9 @@ if os.path.exists(menu_file):
             st.info(f"✨ 系統已自動切換至今日菜單 ({active_date})")
         else:
             active_date = available_dates[-1]
-            st.warning(f"🔍 找不到今日菜單，自動顯示最新一日的菜單 ({active_date})")
+            st.warning(f"❌ 找不到今日菜單，顯示最新一日的菜單 ({active_date})")
             
-        st.write("請對今日菜色進行評分（每道菜限投一次）：")
+        st.write("請為今日菜色進行評分：")
         
         df_today_menu = df_menu[df_menu['date'] == active_date]
         categories = df_today_menu['category'].unique()
@@ -61,7 +61,7 @@ if os.path.exists(menu_file):
                 
                 with col1:
                     if has_voted:
-                        st.write(f"~~{dish} (已完成評分)~~")
+                        st.write(f"~~{dish} (已評分)~~")
                     else:
                         st.write(f"**{dish}**")
                         
