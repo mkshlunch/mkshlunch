@@ -211,14 +211,11 @@ if os.path.exists(menu_file):
                     )
                     
                     if not df_final.empty:
-                        top_dish = df_final.iloc[0]["dish_name"]
-                        top_score = df_final.iloc[0]["平均分數"]
-                        worst_dish = df_final.iloc[-1]["dish_name"]
-                        worst_score = df_final.iloc[-1]["平均分數"]
+                        worst_dish = df_final.iloc[-5]["dish_name"]
+                        worst_score = df_final.iloc[-5]["平均分數"]
                         
                         st.write("---")
-                        st.markdown(f"👑 **人氣王**：`{top_dish}` ({top_score} ⭐)")
-                        st.markdown(f"⚠️ **踩雷王**：`{worst_dish}` ({worst_score} ⭐)")
+                        st.markdown(f"⚠️ 需盡快改善：`{worst_dish}` ({worst_score} ⭐)")
                     
                     st.write("---")
                     st.write("### 📈 菜色滿意度歷史趨勢追蹤")
