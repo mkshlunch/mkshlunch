@@ -226,12 +226,12 @@ st.write("### 📈 菜色滿意度歷史趨勢")
 all_dishes_in_history = sorted(df_ratings["dish_name"].unique())
                     
 if all_dishes_in_history:
-selected_trend_dish = st.selectbox("🔍 選擇想追蹤歷史趨勢的菜色：", all_dishes_in_history)
-df_dish_trend = df_ratings[df_ratings["dish_name"] == selected_trend_dish]
-df_trend_chart = df_dish_trend.groupby("menu_date")["rating"].mean().reset_index()
-df_trend_chart = df_trend_chart.sort_values(by="menu_date")
-df_trend_chart.columns = ["日期", "當日平均分數"]
-df_trend_chart = df_trend_chart.set_index("日期")
-st.line_chart(df_trend_chart, y="當日平均分數")
+ selected_trend_dish = st.selectbox("🔍 選擇想追蹤歷史趨勢的菜色：", all_dishes_in_history)
+ df_dish_trend = df_ratings[df_ratings["dish_name"] == selected_trend_dish]
+ df_trend_chart = df_dish_trend.groupby("menu_date")["rating"].mean().reset_index()
+ df_trend_chart = df_trend_chart.sort_values(by="menu_date")
+ df_trend_chart.columns = ["日期", "當日平均分數"]
+ df_trend_chart = df_trend_chart.set_index("日期")
+ st.line_chart(df_trend_chart, y="當日平均分數")
 else:
-st.error(f"❌ 請聯繫管理員(找不到lunch_menu.csv 請確保菜單檔案在同一個資料夾內)")
+ st.error(f"❌ 請聯繫管理員(找不到lunch_menu.csv 請確保菜單檔案在同一個資料夾內)")
