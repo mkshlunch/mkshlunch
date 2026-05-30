@@ -221,8 +221,8 @@ if not df_final.empty:
     for idx, row in df_worst_five.iterrows():
         st.markdown(f"❌ `{row['dish_name']}` ({row['平均分數']} ⭐)")
         
-                    st.write("---")
-                    st.write("### 📈 菜色滿意度歷史趨勢")
+st.write("---")
+st.write("### 📈 菜色滿意度歷史趨勢")
                     all_dishes_in_history = sorted(df_ratings["dish_name"].unique())
                     
                     if all_dishes_in_history:
