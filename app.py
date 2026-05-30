@@ -136,11 +136,11 @@ if os.path.exists(menu_file):
                 else:
                     df_date_filtered = df_ratings
                     
-                filter_options = ["全部菜色"] + list(df_menu['category'].unique())
+                filter_options = ["所有菜色"] + list(df_menu['category'].unique())
                 selected_filter = st.selectbox("🔍 依菜色分類篩選：", filter_options)
                 
                 if df_date_filtered.empty:
-                    st.warning(f"目前還沒有人評分過 {selected_date} 的菜色喔！")
+                    st.warning(f"目前還沒有人評分過 {selected_date} 的菜色喔")
                 else:
                     df_stats = df_date_filtered.groupby("dish_name").agg(
                         平均分數=("rating", "mean"),
@@ -150,14 +150,14 @@ if os.path.exists(menu_file):
                     
                     df_stats["平均分數"] = df_stats["平均分數"].round(2)
                     df_stats = df_stats.sort_values(by="平均分數", ascending=False)
-                    df_stats = df_stats[["分類", "dish_name", "平均分數", "總投票次數"]]
+                    df_stats = df_stats[["分類", "菜名", "平均分數", "總投票次數"]]
                     
                     if selected_filter != "全部菜色":
                         df_final = df_stats[df_stats["分類"] == selected_filter]
                     else:
                         df_final = df_stats
                     
-                    st.write(f"### 🏆 {selected_date} - {selected_filter} 視覺化動態星榜")
+                    st.write(f"### 🏆 {selected_date} - {selected_filter} 五星排行榜")
                     
                     st.markdown("""
                     <style>
