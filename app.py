@@ -128,10 +128,10 @@ if os.path.exists(menu_file):
                 df_ratings["menu_date"] = df_ratings["menu_date"].astype(str)
                 df_ratings["rating"] = pd.to_numeric(df_ratings["rating"])
                 
-                date_options = ["所有歷史累積"] + list(df_menu['date'].unique())
-                selected_date = st.selectbox("📅 選擇查看特定日期的排行榜：", date_options)
+                date_options = ["所有歷史紀錄"] + list(df_menu['date'].unique())
+                selected_date = st.selectbox("📅 選擇特定日期的排行榜：", date_options)
                 
-                if selected_date != "所有歷史累積":
+                if selected_date != "所有歷史紀錄":
                     df_date_filtered = df_ratings[df_ratings["menu_date"] == selected_date]
                 else:
                     df_date_filtered = df_ratings
