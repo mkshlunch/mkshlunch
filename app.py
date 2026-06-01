@@ -210,28 +210,31 @@ if os.path.exists(menu_file):
                         key="download_report"
                     )
                     
-if not df_final.empty:
-    st.write("---")
-    st.markdown("### ⚠️ 需盡快改善：")
-    
-    # 抓取最後 5 筆，並反轉順序（讓分數最低的排在最上面）
-    df_worst_five = df_final.iloc[-5:].iloc[::-1]
-    
-    # 用迴圈把每一道菜列出來
-    for idx, row in df_worst_five.iterrows():
-        st.markdown(f"❌ `{row['dish_name']}` ({row['平均分數']} ⭐)")
-        
-st.write("---")
-st.write("### 📈 菜色滿意度歷史趨勢")
-all_dishes_in_history = sorted(df_ratings["dish_name"].unique())
-                    
-if all_dishes_in_history:
- selected_trend_dish = st.selectbox("🔍 選擇想追蹤歷史趨勢的菜色：", all_dishes_in_history)
- df_dish_trend = df_ratings[df_ratings["dish_name"] == selected_trend_dish]
- df_trend_chart = df_dish_trend.groupby("menu_date")["rating"].mean().reset_index()
- df_trend_chart = df_trend_chart.sort_values(by="menu_date")
- df_trend_chart.columns = ["日期", "當日平均分數"]
- df_trend_chart = df_trend_chart.set_index("日期")
- st.line_chart(df_trend_chart, y="當日平均分數")
+                    # 🛠️ 縮排精確修正區：移入正確的 Tab2 執行範圍內
+                    if not df_final.empty:
+                        st.write("---")
+                        st.markdown("### ⚠️ 需盡快改善：")
+                        
+                        # 抓取最後 5 筆，並反轉順序（讓分數最低的排在最上面）
+                        df_worst_five = df_final.iloc[-5:].iloc[::-1]
+                        
+                        # 用迴圈把每一道菜列出來
+                        for idx, row in df_worst_five.iterrows():
+                            st.markdown(f"❌ `{row['dish_name']}` ({row['平均分數']} ⭐)")
+                            
+                    st.write("---")
+                    st.write("### 📈 菜色滿意度歷史趨勢")
+                    all_dishes_in_history = sorted(df_ratings["dish_name"].unique())
+                                        
+                    if all_dishes_in_history:
+                        selected_trend_dish = st.selectbox("🔍 選擇想追蹤歷史趨勢的菜色：", all_dishes_in_history)
+                        df_dish_trend = df_ratings[df_ratings["dish_name"] == selected_trend_dish]
+                        df_trend_chart = df_dish_trend.groupby("menu_date")["rating"].mean().reset_index()
+                        df_trend_chart = df_trend_chart.sort_values(by="menu_date")
+                        df_trend_chart.columns = ["日期", "當日平均分數"]
+                        df_trend_chart = df_trend_chart.set_index("日期")
+                        st.line_chart(df_trend_chart, y="當日平均分數")
+                    else:
+                        st.error(f"❌ 請聯繫管理員(未知錯誤)")
 else:
- st.error(f"❌ 請聯繫管理員(未知錯誤)")
+    st.error("❌ 請聯繫管理員(找不到 lunch_menu.csv 請確保菜單檔案在同一個資料夾內)")
