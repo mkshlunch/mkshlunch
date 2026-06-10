@@ -4,14 +4,11 @@ import os
 import requests
 from datetime import datetime, timedelta, timezone
 
-# 1. 網頁基本設定
 st.set_page_config(page_title="馬高午餐小拉屎", page_icon="🍱", layout="centered")
 st.title("🍱 馬高午餐小拉屎")
 
-# 強制設定為台灣台北時區 (UTC+8)
 tz_taiwan = timezone(timedelta(hours=8))
 
-# 2. 檔案路徑與雲端連結讀取
 menu_file = "lunch_menu.csv"
 
 try:
@@ -21,20 +18,16 @@ except:
     cloud_post_url = ""
     cloud_read_url = ""
 
-# 3. 防作弊核心：初始化瀏覽器記憶體
 if "voted_dishes" not in st.session_state:
     st.session_state.voted_dishes = set()
 
-# 4. 檢查主菜單是否存在
 if os.path.exists(menu_file):
     df_menu = pd.read_csv(menu_file, encoding="utf-8-sig", dtype={"date": str})
     
-    # 建立網頁分頁
     tab1, tab2 = st.tabs(["📱 學生專屬評分區", "📊 歷史評分總覽"])
     
-    # ================= 頁籤一：學生專屬評分區 =================
+    # ================= 學生專屬評分區 =================
     with tab1:
-        # 💡 關鍵修正：精準抓取台灣當下的日期，徹底解決國外伺服器時差問題
         today_str = datetime.now(tz_taiwan).strftime("%Y-%m-%d")
         available_dates = df_menu['date'].unique()
         
@@ -82,7 +75,6 @@ if os.path.exists(menu_file):
                             if not cloud_post_url or "macros/s" not in cloud_post_url:
                                 st.error("❌ 請聯繫管理員(錯誤：請確認secrets.toml內填入的是Google Apps Script的網頁應用程式網址)")
                             else:
-                                # 寫入雲端的時間也同步改為台灣時間
                                 now_time = datetime.now(tz_taiwan).strftime("%Y-%m-%d %H:%M:%S")
                                 
                                 payload = {
@@ -106,7 +98,7 @@ if os.path.exists(menu_file):
                                     st.error(f"❌ 連線失敗: {e}")
             st.write("---")
             
-    # ================= 頁籤二：排餐參考大看板 =================
+    # ================= 排餐參考大看板 =================
     with tab2:
         st.subheader("📈 歷史評分榜")
         
@@ -114,7 +106,6 @@ if os.path.exists(menu_file):
             st.info("❌ 請聯繫管理員(請至secrets.toml設定csv_url即可啟用雲端看板功能)")
         else:
             try:
-                # 透過加上 timestamp 參數，強迫 Streamlit 每次都去撈最新的 Google 試算表資料
                 current_ts = datetime.now(tz_taiwan).timestamp()
                 df_ratings = pd.read_csv(f"{cloud_read_url}&timestamp={current_ts}", encoding="utf-8")
             except Exception as e:
@@ -210,15 +201,12 @@ if os.path.exists(menu_file):
                         key="download_report"
                     )
                     
-                    # 🛠️ 縮排精確修正區：移入正確的 Tab2 執行範圍內
                     if not df_final.empty:
                         st.write("---")
                         st.markdown("### ⚠️ 需盡快改善：")
                         
-                        # 抓取最後 5 筆，並反轉順序（讓分數最低的排在最上面）
                         df_worst_five = df_final.iloc[-5:].iloc[::-1]
-                        
-                        # 用迴圈把每一道菜列出來
+
                         for idx, row in df_worst_five.iterrows():
                             st.markdown(f"❌ `{row['dish_name']}` ({row['平均分數']} ⭐)")
                             
